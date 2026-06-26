@@ -58,10 +58,21 @@ router.get("/transactions", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "No access token set" });
     }
 
-    const response = await plaid.transactionsSync({ access_token: accessToken });
-    const { added } = response.data;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setFullYear(endDate.getFullYear() - 2);
 
-    res.json(added);
+    const plaidRes = await plaid.transactionsGet({
+      access_token: accessToken,
+      start_date: startDate.toISOString().split("T")[0],
+      end_date: endDate.toISOString().split("T")[0],
+      options: {
+        count: 500,
+        offset: 0
+      }
+    });
+
+    res.json(plaidRes.data.transactions);
   } catch (error) {
     console.log(`[Error in plaid GET "/transactions"] ${error}`);
     res.sendStatus(500);

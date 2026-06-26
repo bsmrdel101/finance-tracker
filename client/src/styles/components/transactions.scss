@@ -1,0 +1,25 @@
+.transactions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 50vw;  
+}
+
+.transaction-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.transaction {
+  position: relative;
+  background-color: var(--secondary);
+  padding: 0.2rem;
+  border-radius: 0.2rem;
+
+  &__date {
+    position: absolute;
+    right: 0.5rem;
+    top: 0.1rem;
+  }
+}

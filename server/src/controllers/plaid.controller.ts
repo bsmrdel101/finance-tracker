@@ -33,7 +33,10 @@ router.get("/link-token", async (req: Request, res: Response) => {
       client_name: 'Finance App',
       language: 'en',
       country_codes: [CountryCode.Us],
-      products: [Products.Transactions]
+      products: [Products.Transactions],
+      transactions: {
+        days_requested: 730
+      }
     });
   
     res.json(plaidRes.data.link_token);

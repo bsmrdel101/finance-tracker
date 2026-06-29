@@ -6,7 +6,7 @@ import api from "@/scripts/config/axios";
 export const getPlaidStatus = async (): Promise<boolean> => {
   try {
     const res = await api.get("/api/plaid/status");
-    return res.data;
+    return res.data.connected;
   } catch (error) {
     console.error(error);
     return false;

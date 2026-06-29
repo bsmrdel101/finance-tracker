@@ -1,13 +1,12 @@
 export const formatCurrency = (amount: any): string => {
   amount = parseFloat(amount);
+
   if (typeof amount !== 'number' || isNaN(amount)) return '$0.00';
-  if (!amount) return '$0.00';
-  const [integerPart, decimalPart] = amount.toFixed(2).split('.');
+
+  const absolute = Math.abs(amount);
+  const [integerPart, decimalPart] = absolute.toFixed(2).split('.');
   const newIntPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 
-  if (Number(newIntPart) < 0) {
-    return `-$${Math.abs(Number(newIntPart))}.${decimalPart}`;
-  }
   return `$${newIntPart}.${decimalPart}`;
 };
 

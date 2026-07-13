@@ -26,7 +26,7 @@ export const linkToken = async (): Promise<string | null> => {
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
     const res = await api.get('/api/plaid/transactions');
-    return res.data.filter((t: Transaction) => !t.name.includes('INTERNET TFR') && !t.name.includes('CHASE CREDIT CRDAUTOPAY'));
+    return res.data.filter((t: Transaction) => !t.name.includes('INTERNET TFR') && !t.name.includes('CHASE CREDIT CRDAUTOPAY') && !t.name.includes('AUTOMATIC PAYMENT - THANK'));
   } catch (error) {
     console.error(error);
     return [];

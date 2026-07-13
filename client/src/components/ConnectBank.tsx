@@ -1,9 +1,11 @@
 import { exchangeToken, getPlaidStatus, linkToken } from "@/services/plaidService";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePlaidLink } from "react-plaid-link";
 
 
 export default function ConnectBank() {
+  const queryClient = useQueryClient();
+
   const { data: status } = useQuery<boolean>({
     queryKey: ['status'],
     queryFn: getPlaidStatus
@@ -17,7 +19,15 @@ export default function ConnectBank() {
   const { open, ready } = usePlaidLink({
     token,
     onSuccess(publicToken) {
-      exchangeToken(publicToken);
+      exchangeToken(publicToken).then(() => {
+        queryClient.invalidateQueries({
+          queryKey: ['status']
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['transactions']
+        });
+      });
     },
     onExit(err, metadata) {
       console.log('EXIT ERROR:', err);
@@ -26,11 +36,9 @@ export default function ConnectBank() {
   });
 
 
-  if (status) return null;
-
   return (
     <button disabled={!ready} onClick={() => open()}>
-      Connect Bank
+      { status ? 'Add Another Bank' : 'Connect Bank' }
     </button>
   );
 }

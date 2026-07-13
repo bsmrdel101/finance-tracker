@@ -9,15 +9,20 @@ const router = express.Router();
  * @base_path /api/plaid
 */
 
-let accessToken = '';
+type PlaidToken = {
+  itemId: string;
+  accessToken: string;
+};
+
+let accessTokens: PlaidToken[] = [];
 
 (async () => {
-  accessToken = await loadAccessToken();
+  accessTokens = await loadAccessToken() || [];
 })();
 
 router.get("/status", async (req: Request, res: Response) => {
   try {
-    res.json({ connected: !!accessToken });
+    res.json({ connected: accessTokens.length > 0 });
   } catch (error) {
     console.log(`[Error in plaid GET "/status"] ${error}`);
     res.sendStatus(500);
@@ -48,7 +53,9 @@ router.get("/link-token", async (req: Request, res: Response) => {
 
 router.get("/accounts", async (req: Request, res: Response) => {
   try {
-    res.sendStatus(204);
+    res.json(accessTokens.map((token) => ({
+      itemId: token.itemId
+    })));
   } catch(error) {
     console.log(`[Error in plaid GET "/accounts"] ${error}`);
     res.sendStatus(500);
@@ -57,7 +64,7 @@ router.get("/accounts", async (req: Request, res: Response) => {
 
 router.get("/transactions", async (req: Request, res: Response) => {
   try {
-    if (!accessToken) {
+    if (accessTokens.length === 0) {
       return res.status(403).json({ error: "No access token set" });
     }
 
@@ -65,17 +72,23 @@ router.get("/transactions", async (req: Request, res: Response) => {
     const startDate = new Date();
     startDate.setFullYear(endDate.getFullYear() - 2);
 
-    const plaidRes = await plaid.transactionsGet({
-      access_token: accessToken,
-      start_date: startDate.toISOString().split("T")[0],
-      end_date: endDate.toISOString().split("T")[0],
-      options: {
-        count: 500,
-        offset: 0
-      }
-    });
+    const transactions = [];
 
-    res.json(plaidRes.data.transactions);
+    for (const token of accessTokens) {
+      const plaidRes = await plaid.transactionsGet({
+        access_token: token.accessToken,
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        options: {
+          count: 500,
+          offset: 0
+        }
+      });
+
+      transactions.push(...plaidRes.data.transactions);
+    }
+
+    res.json(transactions);
   } catch (error) {
     console.log(`[Error in plaid GET "/transactions"] ${error}`);
     res.sendStatus(500);
@@ -88,8 +101,14 @@ router.post("/exchange-token", async (req: Request, res: Response) => {
       public_token: req.body.publicToken
     });
 
-    accessToken = plaidRes.data.access_token;
-    await saveAccessToken(accessToken);
+    const token: PlaidToken = {
+      itemId: plaidRes.data.item_id,
+      accessToken: plaidRes.data.access_token
+    };
+
+    accessTokens.push(token);
+
+    await saveAccessToken(accessTokens);
 
     res.sendStatus(204);
   } catch(error) {

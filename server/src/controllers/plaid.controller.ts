@@ -70,22 +70,31 @@ router.get("/transactions", async (req: Request, res: Response) => {
 
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setFullYear(endDate.getFullYear() - 2);
+    startDate.setFullYear(endDate.getFullYear() - 20);
 
     const transactions = [];
 
     for (const token of accessTokens) {
-      const plaidRes = await plaid.transactionsGet({
-        access_token: token.accessToken,
-        start_date: startDate.toISOString().split("T")[0],
-        end_date: endDate.toISOString().split("T")[0],
-        options: {
-          count: 500,
-          offset: 0
-        }
-      });
+      let offset = 0;
+      const count = 500;
+      let hasMore = true;
 
-      transactions.push(...plaidRes.data.transactions);
+      while (hasMore) {
+        const plaidRes = await plaid.transactionsGet({
+          access_token: token.accessToken,
+          start_date: startDate.toISOString().split("T")[0],
+          end_date: endDate.toISOString().split("T")[0],
+          options: {
+            count,
+            offset
+          }
+        });
+
+        transactions.push(...plaidRes.data.transactions);
+
+        offset += plaidRes.data.transactions.length;
+        hasMore = plaidRes.data.transactions.length === count;
+      }
     }
 
     res.json(transactions);
